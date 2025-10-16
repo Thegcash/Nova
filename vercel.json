@@ -1,6 +1,4 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd NOVA && npm install && npm run build",
-  "installCommand": "cd NOVA && npm install",
-  "ignoreCommand": "echo 'force build from NOVA'"
+  "ignoreCommand": "echo 'force build'"
 }
