@@ -1,0 +1,37 @@
+name: Carrier Exports (Daily)
+
+on:
+  schedule:
+    - cron: "0 8 * * *"   # 08:00 UTC ≈ 02:00 CST
+  workflow_dispatch: {}
+
+jobs:
+  run-exports:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute date window (UTC -> yesterday/today)
+        id: dates
+        run: |
+          FROM=$(date -u -d "yesterday" +%F)
+          TO=$(date -u +%F)
+          echo "from=$FROM" >> $GITHUB_OUTPUT
+          echo "to=$TO" >> $GITHUB_OUTPUT
+
+      - name: Call export endpoint
+        env:
+          BASE_URL: ${{ secrets.DEPLOYED_BASE_URL }}
+          FROM: ${{ steps.dates.outputs.from }}
+          TO: ${{ steps.dates.outputs.to }}
+        run: |
+          if [ -z "$BASE_URL" ]; then
+            echo "ERROR: Missing DEPLOYED_BASE_URL secret"; exit 1
+          fi
+          echo "Posting export $FROM -> $TO to $BASE_URL"
+          curl -sS -X POST \
+            -H "content-type: application/json" \
+            -d "{\"from\":\"${FROM}\",\"to\":\"${TO}\",\"format\":\"csv\"}" \
+            "${BASE_URL}/api/exports/carrier/run" \
+            | tee response.json
+          jq . response.json || true
+
+

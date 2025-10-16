@@ -1,0 +1,25 @@
+name: Export Retention Cleanup
+
+on:
+  schedule:
+    - cron: '30 8 * * *'   # 08:30 UTC daily
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call retention API
+        env:
+          BASE_URL: ${{ secrets.DEPLOYED_BASE_URL }}
+        run: |
+          if [ -z "$BASE_URL" ]; then
+            echo "ERROR: Missing DEPLOYED_BASE_URL secret"; exit 1
+          fi
+          echo "Running retention cleanup at $BASE_URL"
+          curl -sS -X POST "$BASE_URL/api/exports/carrier/retention/run" \
+            -H "content-type: application/json" \
+            | tee response.json
+          jq . response.json || true
+
+
