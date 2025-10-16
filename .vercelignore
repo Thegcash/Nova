@@ -1,5 +1,4 @@
+.vercel
+.git
+*.log
 node_modules
-.next
-vercel
-.vscode
-.DS_Store

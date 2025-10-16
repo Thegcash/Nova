@@ -1,7 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd NOVA && npm ci && npm run build",
-  "installCommand": "cd NOVA && npm ci",
-  "outputDirectory": "NOVA/.next",
-  "ignoreCommand": "echo force-rebuild && exit 1"
+  "installCommand": "npm --prefix NOVA ci",
+  "buildCommand": "npm --prefix NOVA run build",
+  "ignoreCommand": "echo 'force build from NOVA'"
 }
