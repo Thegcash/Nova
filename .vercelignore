@@ -1,6 +1,5 @@
-# Safe ignores; DO NOT ignore NOVA/
-.git
-.DS_Store
 node_modules
 .next
 vercel
+.vscode
+.DS_Store
