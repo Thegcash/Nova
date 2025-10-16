@@ -1,6 +1,6 @@
-UI/
-NOVA/
-api/
-
-
-
+# Safe ignores; DO NOT ignore NOVA/
+.git
+.DS_Store
+node_modules
+.next
+vercel
