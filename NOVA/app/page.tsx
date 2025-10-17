@@ -1,2 +1,2 @@
 import { redirect } from "next/navigation";
-export default function Home() { redirect("/experiments"); return null; }
+export default function Home() { redirect("/dashboard"); return null; }
