@@ -11,6 +11,18 @@ export default async function DashboardPage() {
   let experiments = null;
   let ttl = null;
   
+  // Environment guard
+  if (!base) {
+    return (
+      <AppShell>
+        <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
+        <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-700">
+          NEXT_PUBLIC_BASE_URL not configured. Some features may not work.
+        </div>
+      </AppShell>
+    );
+  }
+  
   try {
     experiments = await getJSON(`${base}/api/experiments`);
     ttl = await getJSON(`${base}/api/filings/ttl`);
@@ -25,17 +37,17 @@ export default async function DashboardPage() {
     <AppShell>
       <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border p-4">
+        <div className="card p-4">
           <div className="text-sm opacity-70">Experiments</div>
           <div className="text-3xl font-semibold">{expCount}</div>
           <a className="mt-2 inline-block text-sm underline" href="/experiments">View all</a>
         </div>
-        <div className="rounded-xl border p-4">
+        <div className="card p-4">
           <div className="text-sm opacity-70">Filings TTL</div>
           <div className="text-3xl font-semibold">{ttlSeconds}s</div>
           <a className="mt-2 inline-block text-sm underline" href="/filings">Manage</a>
         </div>
-        <div className="rounded-xl border p-4">
+        <div className="card p-4">
           <div className="text-sm opacity-70">Environment</div>
           <div className="text-3xl font-semibold">Production</div>
         </div>
@@ -43,7 +55,7 @@ export default async function DashboardPage() {
 
       <section className="mt-8">
         <h2 className="font-medium mb-2">Recent Experiments</h2>
-        <div className="rounded-xl border divide-y">
+        <div className="card divide-y">
           {Array.isArray(experiments) && experiments.length > 0 ? (
             experiments.slice(0, 5).map((e: any) => (
               <div key={e.id} className="p-4 flex items-center justify-between">

@@ -88,7 +88,7 @@ export default function ExperimentsClient({ initialExperiments }: { initialExper
 
       {error && <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-      <div className="rounded-xl border p-2 divide-y">
+      <div className="card p-2 divide-y">
         {loading && <div className="p-4 text-sm opacity-70">Loading experiments...</div>}
         {!loading && experiments.length === 0 && <div className="p-4 text-sm opacity-70">No experiments yet.</div>}
         {experiments.map((e) => (
@@ -118,7 +118,7 @@ export default function ExperimentsClient({ initialExperiments }: { initialExper
       </div>
 
       {logId && (
-        <section className="rounded-xl border p-4">
+        <section className="card p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-medium">Logs for {logId}</h2>
             <button onClick={() => setLogId(null)} className="text-sm underline">Close</button>

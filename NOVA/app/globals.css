@@ -10,12 +10,20 @@
   --line: #e8eaf0;
   --hover: #f7f8fb;
   --focus: #cfd6e4;
+  --card: #fff;
+  --muted: #f7f7f7;
 }
 
 body {
-  background-color: var(--bg);
+  background: var(--muted);
   color: var(--ink);
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
 }
 
 button {
