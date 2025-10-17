@@ -8,8 +8,16 @@ async function getJSON(url: string) {
 
 export default async function DashboardPage() {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-  const experiments = await getJSON(`${base}/api/experiments`);
-  const ttl = await getJSON(`${base}/api/filings/ttl`);
+  let experiments = null;
+  let ttl = null;
+  
+  try {
+    experiments = await getJSON(`${base}/api/experiments`);
+    ttl = await getJSON(`${base}/api/filings/ttl`);
+  } catch (e) {
+    // Handle fetch errors gracefully
+  }
+  
   const expCount = Array.isArray(experiments) ? experiments.length : 0;
   const ttlSeconds = ttl?.ttl_seconds ?? 86400;
 
