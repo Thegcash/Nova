@@ -17,7 +17,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="text-lg font-semibold mb-4">Nova 2.0</div>
         <nav className="space-y-1">
           {tabs.map(t => {
-            const active = pathname.startsWith(t.href);
+            const active = pathname?.startsWith(t.href) ?? false;
             return (
               <Link key={t.href} href={t.href}
                 className={`block rounded-md px-3 py-2 text-sm ${active ? "bg-black text-white" : "hover:bg-gray-100"}`}>
