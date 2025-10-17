@@ -20,11 +20,19 @@ export async function POST(req: Request) {
   r = await sb.from('experiments').update({ status: 'done', meta }).eq('id', id)
   if (r.error) return NextResponse.json({ error: r.error.message }, { status: 500 })
 
-  const { data } = await sb.from('experiments')
-    .select('id,name,status,created_at,notes,meta').eq('id', id).single()
+  const { data: final } = await sb
+    .from('experiments')
+    .select('id,nl_change,status,created_at,notes,meta')
+    .eq('id', id)
+    .single();
+
   return NextResponse.json({
-    id: data?.id, name: data?.name, status: data?.status,
-    createdAt: data?.created_at, notes: data?.notes, meta: data?.meta
-  })
+    id,
+    name: final?.nl_change ?? null,
+    status: final?.status ?? 'done',
+    createdAt: final?.created_at ?? null,
+    notes: final?.notes ?? null,
+    meta: final?.meta ?? {}
+  });
 }
 // Force rebuild: $(date +%s)
