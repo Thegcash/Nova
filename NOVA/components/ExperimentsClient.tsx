@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Exp = {
   id: string;
@@ -17,6 +17,24 @@ export default function ExperimentsClient({ initialExperiments }: { initialExper
   const [logId, setLogId] = useState<string | null>(null);
   const [logs, setLogs] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadExperiments() {
+      try {
+        const res = await fetch('/api/experiments', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          setExperiments(data);
+        }
+      } catch (e) {
+        setError('Failed to load experiments');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadExperiments();
+  }, []);
 
   async function run(id: string) {
     try {
@@ -71,7 +89,8 @@ export default function ExperimentsClient({ initialExperiments }: { initialExper
       {error && <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       <div className="rounded-xl border p-2 divide-y">
-        {experiments.length === 0 && <div className="p-4 text-sm opacity-70">No experiments yet.</div>}
+        {loading && <div className="p-4 text-sm opacity-70">Loading experiments...</div>}
+        {!loading && experiments.length === 0 && <div className="p-4 text-sm opacity-70">No experiments yet.</div>}
         {experiments.map((e) => (
           <div key={e.id} className="flex items-center justify-between p-4 gap-4">
             <div className="min-w-0">
