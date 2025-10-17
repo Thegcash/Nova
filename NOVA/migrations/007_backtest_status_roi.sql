@@ -11,3 +11,4 @@ create index if not exists idx_experiments_status on public.experiments(status);
 
 -- Add index on meta for efficient JSON queries
 create index if not exists idx_experiments_meta on public.experiments using gin(meta);
+

@@ -1,0 +1,47 @@
+{
+  "name": "nova-command-center",
+  "version": "2.0.0",
+  "description": "Nova 2.0 — Rate Experiment Sandbox (Legora/Attio skin)",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "verify": "tsx scripts/verify-setup.ts",
+    "create-bucket": "tsx scripts/create-bucket.ts",
+    "test": "vitest run --reporter=default",
+    "test:ui": "vitest",
+    "smoke": "tsx scripts/smoke.ts",
+    "demo": "tsx scripts/demo.ts",
+    "rls:probe": "tsx scripts/rls_probe.ts",
+    "ratelimit:smoke": "tsx scripts/ratelimit_smoke.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "next": "^14.1.0",
+    "openai": "^4.104.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.16",
+    "dotenv-cli": "^10.0.0",
+    "eslint": "^8.55.0",
+    "eslint-config-next": "^14.1.0",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.3.0",
+    "vitest": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
