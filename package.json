@@ -1,7 +1,7 @@
 {
-  "name": "nova-command-center",
+  "name": "nova-fleet-command-center",
   "version": "1.0.0",
-  "description": "",
+  "description": "Nova Fleet Command Center - Autonomous vehicle fleet management dashboard",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",

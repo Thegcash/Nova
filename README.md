@@ -1,40 +1,70 @@
-# Nova Command Center
+# Nova Fleet Command Center
 
 A modern dashboard for autonomous vehicle fleet management built with Next.js 15, TypeScript, and Tailwind CSS.
 
-## Features
+## 🚀 Quick Start
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Set up environment
+cp .env.example .env.local
+# Fill in your Supabase and map API credentials
+
+# 3. Run the development server
+npm run dev
+
+# 4. Open your browser
+open http://localhost:3000
+```
+
+## 📊 Features
 
 - **Fleet Overview**: Monitor vehicle status, performance metrics, and health checks
 - **Map & Live Operations**: Real-time vehicle tracking and operational control
 - **Playback**: Review historical data and replay past operations
 - **Data Ingestion**: Monitor data pipelines and ingestion processes
 - **Cost Optimization**: Identify cost-saving opportunities and optimize operations
+- **ROI Tracking**: Policy performance and cost savings analysis
+- **Data Exports**: Generate carrier data exports in CSV or Parquet format
 
-## Tech Stack
+## 🏗️ Tech Stack
 
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **Maps**: Mapbox GL JS or Google Maps
+- **Charts**: Recharts
 - **UI Components**: Custom component library with consistent design system
 
-## Getting Started
+## 🔧 Environment Variables
 
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+Create a `.env.local` file with the following variables:
 
-2. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE=your_service_role_key
 
-3. **Open your browser** and navigate to [http://localhost:3000](http://localhost:3000)
+# Map Integration (choose one)
+NEXT_PUBLIC_MAPBOX_TOKEN=pk.your-mapbox-token
+# OR
+# GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 
-## Project Structure
+# Export Configuration
+EXPORT_DEFAULT_FORMAT=csv
+
+# Application Configuration
+TENANT_ID=default
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+```
+
+## 📁 Project Structure
 
 ```
-nova-command-center/
+nova-fleet-command-center/
 ├── app/
 │   ├── (dash)/                 # Dashboard route group
 │   │   ├── layout.tsx         # Dashboard layout with sidebar
@@ -43,84 +73,96 @@ nova-command-center/
 │   │   ├── playback/          # Historical data playback
 │   │   ├── ingestion/         # Data pipeline monitoring
 │   │   └── reduce-cost/       # Cost optimization
-│   ├── globals.css            # Global styles with Tailwind
-│   ├── layout.tsx             # Root layout
-│   └── page.tsx               # Home page (redirects to fleet-overview)
+│   ├── api/                   # API routes
+│   ├── exports/               # Data export functionality
+│   ├── roi/                   # ROI tracking
+│   └── globals.css            # Global styles
 ├── components/
 │   └── ui.tsx                 # Shared UI components
-├── tailwind.config.js         # Tailwind configuration
-├── tsconfig.json              # TypeScript configuration
-└── next.config.js             # Next.js configuration
+├── lib/                       # Utility libraries
+└── types/                     # TypeScript type definitions
 ```
 
-## UI Components
+## 🎨 Design System
 
-The project includes a set of reusable UI components:
+The project uses a clean, professional design system:
 
-- **RailItem**: Navigation rail items with active states
-- **Chip**: Status indicators with different tones (ok, warn, bad)
-- **Button**: Action buttons with primary/danger variants
-- **Kbd**: Keyboard shortcut indicators
-- **TestRow**: Status rows for system checks
-- **Kpi**: Key performance indicator cards
+- **Single accent color**: Blue (#2563EB)
+- **Status colors**: Green, Amber, Red
+- **No emojis**: All icons from Lucide React
+- **Fast transitions**: 170ms with custom easing
+- **Professional typography**: Inter font
 
-## Policy ROI Dashboard
+### Available Components
 
-The application includes a comprehensive ROI tracking system for policy enforcement.
+- `.card` - White card with shadow and border
+- `.stat-card` - KPI display card
+- `.btn` - Button (primary, secondary variants)
+- `.badge-*` - Status badges (success, warning, error, neutral)
+- `.grid` - Responsive grid layouts
 
-### API Endpoints
+## 🚀 Deployment
 
-- **GET** `/api/roi/health` - Health check endpoint
-- **GET** `/api/roi/summary` - ROI summary across policies (supports `from`, `to`, `policy_id` params)
-- **GET** `/api/roi/policy/:id/trends` - 30-day trends for a specific policy
-- **GET** `/api/roi/policy/:id/top-units` - Top units by loss prevention (7 days)
-- **POST** `/api/cron/roi-digest` - Sends daily digest to Slack
+### Vercel (Recommended)
 
-### Environment Variables
+1. Connect your GitHub repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
 
-Create a `.env.local` file in the project root with:
+### Manual Deployment
 
 ```bash
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE=your_service_role_key
-SLACK_WEBHOOK_ROI=https://hooks.slack.com/services/YOUR/WEBHOOK/URL  # Optional
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
-**Security Note**: These variables are server-only and never exposed to the browser.
-
-### Running the ROI Digest Manually
-
-To trigger the daily ROI digest:
+## 🧪 Development
 
 ```bash
-curl -X POST http://localhost:3006/api/cron/roi-digest
+# Start development server
+npm run dev
+
+# Run linting
+npm run lint
+
+# Build for production
+npm run build
 ```
 
-To check configuration status:
+## 📈 Current Status
 
-```bash
-curl http://localhost:3006/api/cron/roi-digest
-```
+### ✅ Working Features
+- **ROI Dashboard** - Real Supabase integration with policy performance tracking
+- **Data Exports** - Functional CSV/Parquet export system
+- **Basic Navigation** - Clean sidebar with all pages accessible
+- **Design System** - Professional, consistent UI components
 
-### Pages
+### 🚧 In Development
+- **Fleet Overview** - Real vehicle data integration
+- **Map & Live Ops** - Real-time vehicle tracking
+- **Playback System** - Historical data visualization
+- **Data Ingestion** - Pipeline monitoring
 
-- `/policy-roi` - Policy ROI dashboard with trends and top units
+## 🔗 Related Projects
 
-## Available Scripts
+- **[Nova Pricing OS](../nova-pricing-os)** - Insurance rating engine (separate repository)
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
+## 📞 Support
 
-## Navigation
+For issues and questions:
+1. Check the documentation in each page directory
+2. Review the API routes in `/app/api/`
+3. Check environment variable configuration
 
-The dashboard includes keyboard shortcuts for quick navigation:
-- **G/J/K/Space** - Various navigation shortcuts (as indicated in the sidebar)
+## 📜 License
 
-## Customization
+Proprietary — Nova Fleet Command Center
 
-The design system uses Tailwind CSS with a clean, modern aesthetic. Colors and spacing can be customized in the `tailwind.config.js` file.
+---
 
-Each page is designed to be modular and can be extended with additional functionality as needed.
-
+**Built with:** Next.js 15, TypeScript, Tailwind CSS, Supabase  
+**Design:** Clean, professional fleet management UI  
+**Status:** 🚧 **In Active Development**
