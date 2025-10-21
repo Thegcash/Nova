@@ -1,147 +1,199 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Chip, Button, Kbd, Kpi, TestRow } from "@/components/ui";
+import { useEffect, useState } from "react";
 
-interface FleetOverviewData {
+interface FleetKPIs {
   active_vehicles: number;
   idle_vehicles: number;
   alerts_24h: number;
-  total_vehicles: number;
-  last_updated: string;
 }
 
 export default function FleetOverviewPage() {
-  const [data, setData] = useState<FleetOverviewData | null>(null);
+  const [kpis, setKpis] = useState<FleetKPIs>({ active_vehicles: 0, idle_vehicles: 0, alerts_24h: 0 });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchKpis = async () => {
       try {
-        const response = await fetch('/api/fleet/overview');
-        if (!response.ok) {
-          throw new Error('Failed to fetch fleet data');
+        const res = await fetch('/api/fleet/overview', {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setKpis(data);
         }
-        const result = await response.json();
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+      } catch (error) {
+        console.error('Failed to fetch KPIs:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
+    fetchKpis();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold mb-2">Fleet Overview</h1>
-          <p className="text-gray-600">Loading fleet data...</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white border rounded-lg p-4 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold mb-2">Fleet Overview</h1>
-          <p className="text-red-600">Error loading fleet data: {error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold mb-2">Fleet Overview</h1>
-          <p className="text-gray-600">No data available</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold mb-2">Fleet Overview</h1>
-        <p className="text-gray-600">Monitor your autonomous vehicle fleet status and performance metrics.</p>
-        <p className="text-sm text-gray-500 mt-1">Last updated: {new Date(data.last_updated).toLocaleString()}</p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Kpi 
-          label="Active Vehicles" 
-          value={data.active_vehicles.toString()} 
-          sub={`${data.total_vehicles} total`} 
-          tone="ok" 
-        />
-        <Kpi 
-          label="Idle Vehicles" 
-          value={data.idle_vehicles.toString()} 
-          sub="Speed < 1 mph" 
-          tone={data.idle_vehicles > 0 ? "warn" : "ok"} 
-        />
-        <Kpi 
-          label="24h Alerts" 
-          value={data.alerts_24h.toString()} 
-          sub="Last 24 hours" 
-          tone={data.alerts_24h > 10 ? "bad" : data.alerts_24h > 5 ? "warn" : "ok"} 
-        />
-        <Kpi 
-          label="Fleet Health" 
-          value={`${Math.round((data.active_vehicles / Math.max(data.total_vehicles, 1)) * 100)}%`} 
-          sub="Operational" 
-          tone={data.active_vehicles === data.total_vehicles ? "ok" : "warn"} 
-        />
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
+      <style jsx global>{`
+        :root{
+          --bg:#fff; --panel:#fff;
+          --ink:#0f1720; --ink-dim:#5b6472;
+          --line:#e8eaf0; --hover:#f7f8fb; --focus:#cfd6e4; --accent:#2b6be4;
+          --chip-bg:#f4f6fa; --chip-ink:#3e4652;
+          --chip-exclusive-bg:#ffefd2; --chip-exclusive-ink:#9a5a00;
+          --chip-nonex-bg:#ebf5ff; --chip-nonex-ink:#2457a3;
+          --chip-other-bg:#f8e8f0; --chip-other-ink:#8a3556;
+          --radius-s:8px; --radius-m:12px; --radius-l:16px;
+          --shadow-0:0 0 0 1px var(--line);
+        }
+        .btn-ghost{ height:34px; padding:0 12px; border:1px solid var(--line); border-radius:12px; background:var(--bg); display:inline-flex; align-items:center; gap:8px; }
+        .btn-ghost:hover{ background:var(--hover); }
+        .chip{ padding:4px 10px; border-radius:999px; font-size:12px; line-height:1; }
+        .chip-muted{ background:var(--chip-bg); color:var(--chip-ink); }
+        .chip-excl{ background:var(--chip-exclusive-bg); color:var(--chip-exclusive-ink); }
+        .chip-nonex{ background:var(--chip-nonex-bg); color:var(--chip-nonex-ink); }
+        .chip-other{ background:var(--chip-other-bg); color:var(--chip-other-ink); }
+        .kpi{ border:1px solid var(--line); border-radius:16px; padding:14px 16px; background:var(--panel); }
+        .table thead th{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); border-bottom:1px solid var(--line); padding:10px 12px; position:sticky; top:0; background:var(--panel); z-index:1; }
+        .table td{ font-size:13.5px; color:var(--ink); padding:10px 12px; border-bottom:1px solid var(--line); height:44px; }
+        .row-hover:hover{ background:var(--hover); }
+        .divider{ height:1px; background:var(--line); }
+      `}</style>
+
+      {/* Top Bar */}
+      <div className="h-14 flex items-center justify-between px-6 border-b" style={{borderColor:'var(--line)'}}>
+        <div className="flex items-center gap-3">
+          <div className="text-[13px] text-[var(--ink-dim)]">Fleet ▾</div>
+          <div className="w-1 h-1 rounded-full bg-[var(--line)]"/>
+          <div className="text-[15px] font-semibold">Command Center — Overview</div>
+          <div className="w-1 h-1 rounded-full bg-[var(--line)]"/>
+          <button className="btn-ghost text-[13px]">Vehicles ▾</button>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex -space-x-2 mr-2">
+            <img className="w-6 h-6 rounded-full ring-2 ring-white" src="https://i.pravatar.cc/24?img=1" />
+            <img className="w-6 h-6 rounded-full ring-2 ring-white" src="https://i.pravatar.cc/24?img=2" />
+            <div className="w-6 h-6 rounded-full bg-[var(--hover)] grid place-items-center text-[11px] ring-2 ring-white">+3</div>
+          </div>
+          <button className="btn-ghost text-[13px]">Share</button>
+          <button className="btn-ghost text-[13px]">Download</button>
+          <button className="btn-ghost text-[13px]">EN ▾</button>
+          <button className="btn-ghost text-[13px]">⚡ Run all</button>
+        </div>
       </div>
 
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-lg font-medium mb-4">Fleet Status</h2>
-        <div className="space-y-2">
-          <TestRow 
-            label="Vehicle Health Checks" 
-            pass={data.active_vehicles > 0} 
-            detail={`${data.active_vehicles}/${data.total_vehicles} vehicles active`} 
-          />
-          <TestRow 
-            label="Communication Status" 
-            pass={data.active_vehicles > 0} 
-            detail={data.active_vehicles > 0 ? "All systems online" : "No active vehicles"} 
-          />
-          <TestRow 
-            label="Idle Vehicles" 
-            pass={data.idle_vehicles === 0} 
-            detail={data.idle_vehicles > 0 ? `${data.idle_vehicles} vehicles idle` : "All vehicles active"} 
-          />
-          <TestRow 
-            label="Alert Status" 
-            pass={data.alerts_24h < 10} 
-            detail={`${data.alerts_24h} alerts in last 24h`} 
-          />
+      <div className="flex">
+        {/* Left Rail */}
+        <div className="w-[72px] border-r" style={{borderColor:'var(--line)'}}>
+          <div className="p-3 flex flex-col items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[var(--hover)] grid place-items-center font-semibold">N</div>
+            {['🏠','📁','💬','📄','⚙️'].map((i,idx)=> (
+              <button key={idx} className="w-10 h-10 rounded-xl hover:bg-[var(--hover)] grid place-items-center text-lg">{i}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Column */}
+        <div className="flex-1 min-h-[calc(100vh-56px)]">
+          {/* Assistant Dock */}
+          <div className="px-6 py-4 border-b" style={{borderColor:'var(--line)'}}>
+            <div className="flex items-center gap-2">
+              <button className="btn-ghost">💬 New chat</button>
+              <span className="chip chip-muted">Analyze fleet</span>
+              <span className="chip chip-muted">Find idle units</span>
+              <span className="chip chip-muted">Attach logs</span>
+            </div>
+          </div>
+
+          {/* Toolbar */}
+          <div className="px-6 py-3 flex items-center gap-2 border-b" style={{borderColor:'var(--line)'}}>
+            <button className="btn-ghost">➕ Add data</button>
+            <button className="btn-ghost">📊 Columns</button>
+            <button className="btn-ghost">📦 Templates</button>
+            <div className="ml-auto flex items-center gap-2">
+              <button className="btn-ghost">Deploy to Staging</button>
+              <button className="btn-ghost">Export</button>
+            </div>
+          </div>
+
+          {/* Context Chips */}
+          <div className="px-6 py-3 flex items-center gap-2 border-b" style={{borderColor:'var(--line)'}}>
+            <span className="chip chip-muted">Context: Fleet</span>
+            <span className="chip chip-muted">Tenant: default</span>
+            <span className="chip chip-muted">Window: last 24h</span>
+          </div>
+
+          {/* KPI Row (wired to API) */}
+          <div className="px-6 py-4 grid grid-cols-4 gap-3">
+            {[
+              {label:'Active Vehicles', value: loading ? '...' : String(kpis.active_vehicles ?? 0)},
+              {label:'Idle Vehicles (10m)', value: loading ? '...' : String(kpis.idle_vehicles ?? 0)},
+              {label:'Alerts (24h)', value: loading ? '...' : String(kpis.alerts_24h ?? 0)},
+              {label:'Data Freshness', value: 'Live'},
+            ].map((k)=> (
+              <div key={k.label} className="kpi">
+                <div className="text-[12px] uppercase tracking-[.08em] text-[var(--ink-dim)]">{k.label}</div>
+                <div className="text-[20px] font-semibold mt-1">{k.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tabs */}
+          <div className="px-6">
+            <div className="flex items-center gap-4 text-[13px] border-b" style={{borderColor:'var(--line)'}}>
+              {['Overview','Segments','Winners','Losers','Guardrail Side-effects','Audit Diff'].map((t, i)=> (
+                <button key={t} className={`h-10 px-1 ${i===0? 'border-b-2 border-[var(--ink)] font-medium':'text-[var(--ink-dim)]'}`}>{t}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Table (kept static for now) */}
+          <div className="px-6 pt-3 pb-24">
+            <div className="border rounded-2xl overflow-hidden" style={{borderColor:'var(--line)'}}>
+              <div className="overflow-auto max-h-[46vh]">
+                <table className="w-full table">
+                  <thead>
+                    <tr>
+                      {['Document','Parties','Date','Key Terms','License Scope','Exclusivity','Field of Use'].map(h=> (
+                        <th key={h} className="text-left">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({length:10}).map((_,i)=> (
+                      <tr key={i} className="row-hover">
+                        <td><span className="font-medium">Agreement — </span><span className="text-[var(--ink-dim)]">Wireless Content License {i+1}</span></td>
+                        <td>Acme Co • Nova Labs</td>
+                        <td>16 Dec 2004</td>
+                        <td className="truncate">Indemnity caps, sublicensing, renewal terms, termination for breach…</td>
+                        <td>North America</td>
+                        <td>
+                          {i%3===0 && <span className="chip chip-excl">Exclusive</span>}
+                          {i%3===1 && <span className="chip chip-nonex">Non-exclusive</span>}
+                          {i%3===2 && <span className="chip chip-other">Other</span>}
+                        </td>
+                        <td>Wireless distribution</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Composer */}
+      <div className="fixed bottom-0 left-[72px] right-0 h-[68px] border-t bg-[var(--panel)] flex items-center px-6" style={{borderColor:'var(--line)'}}>
+        <div className="w-full max-w-[1200px]">
+          <div className="flex items-center gap-2 border rounded-full px-4 py-3" style={{borderColor:'var(--line)'}}>
+            <span className="chip chip-muted">Context: Fleet</span>
+            <input className="flex-1 outline-none text-[14px]" placeholder="Give me a task to work on…" />
+            <button className="text-[14px]">📎</button>
+            <button className="text-[14px]">➤</button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

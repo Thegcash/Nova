@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { db } from '../lib/db';
+import { db, supabaseServer } from '../lib/db';
 
 interface Vehicle {
   id: string;
