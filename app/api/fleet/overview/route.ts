@@ -1,31 +1,45 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+function serverClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const service = process.env.SUPABASE_SERVICE_ROLE!;
+  if (!url || !service) throw new Error("Missing Supabase env vars");
+  return createClient(url, service, { auth: { persistSession: false } });
+}
 
 export async function GET() {
+  const supabase = serverClient();
+
   try {
-    // Get active vehicles (heartbeat within last 5 minutes)
-    const activeVehicles = await db.vehicles.getActive();
-    const activeCount = activeVehicles.length;
+    const [
+      { data: active,  error: e1 },
+      { data: idle,    error: e2 },
+      { data: alerts,  error: e3 },
+    ] = await Promise.all([
+      supabase.rpc("kpi_active_vehicles"),
+      supabase.rpc("kpi_idle_vehicles"),
+      supabase.rpc("kpi_alerts_24h"),
+    ]);
 
-    // Get idle vehicles (speed < 1 for all points in last 10 minutes)
-    const idleVehicleIds = await db.positions.getIdleVehicles();
-    const idleCount = idleVehicleIds.length;
-
-    // Get 24h alerts count
-    const alerts24h = await db.events.get24hAlerts();
+    if (e1 || e2 || e3) {
+      return NextResponse.json(
+        {
+          error: "KPI RPC failed",
+          details: { active: e1?.message, idle: e2?.message, alerts: e3?.message },
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
-      active_vehicles: activeCount,
-      idle_vehicles: idleCount,
-      alerts_24h: alerts24h,
-      total_vehicles: activeCount + idleCount,
-      last_updated: new Date().toISOString()
+      active_vehicles: active ?? 0,
+      idle_vehicles: idle ?? 0,
+      alerts_24h: alerts ?? 0,
     });
-
-  } catch (error) {
-    console.error('Fleet overview error:', error);
+  } catch (err: any) {
     return NextResponse.json(
-      { error: 'Failed to fetch fleet overview' },
+      { error: "Failed to fetch fleet overview", detail: err?.message },
       { status: 500 }
     );
   }
