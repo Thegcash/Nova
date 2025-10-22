@@ -1,21 +1,5 @@
 // app/(dash)/fleet-overview/page.tsx
-import AssistantPanel from "@/components/AssistantPanel";
-
-export const dynamic = "force-dynamic";
-
-async function getKpis() {
-  try {
-    const res = await fetch("/api/fleet/overview", { cache: "no-store", next: { revalidate: 0 } });
-    if (!res.ok) throw new Error("bad status");
-    return await res.json();
-  } catch {
-    return { active_vehicles: 0, idle_vehicles: 0, alerts_24h: 0 };
-  }
-}
-
-export default async function FleetOverview() {
-  const kpis = await getKpis();
-
+export default function ExperimentsPreview() {
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
       <style jsx global>{`
@@ -47,11 +31,11 @@ export default async function FleetOverview() {
       {/* Top Bar */}
       <div className="h-14 flex items-center justify-between px-6 border-b" style={{borderColor:'var(--line)'}}>
         <div className="flex items-center gap-3">
-          <div className="text-[13px] text-[var(--ink-dim)]">Fleet ▾</div>
+          <div className="text-[13px] text-[var(--ink-dim)]">Collection ▾</div>
           <div className="w-1 h-1 rounded-full bg-[var(--line)]"/>
-          <div className="text-[15px] font-semibold">Command Center — Overview</div>
+          <div className="text-[15px] font-semibold">Tabular Review — Experiments</div>
           <div className="w-1 h-1 rounded-full bg-[var(--line)]"/>
-          <button className="btn-ghost text-[13px]">Vehicles ▾</button>
+          <button className="btn-ghost text-[13px]">License agreements ▾</button>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex -space-x-2 mr-2">
@@ -82,34 +66,39 @@ export default async function FleetOverview() {
         <div className="flex-1 min-h-[calc(100vh-56px)]">
           {/* Assistant Dock */}
           <div className="px-6 py-4 border-b" style={{borderColor:'var(--line)'}}>
-            <AssistantPanel />
+            <div className="flex items-center gap-2">
+              <button className="btn-ghost">💬 New chat</button>
+              <span className="chip chip-muted">Analyze tabular review</span>
+              <span className="chip chip-muted">Refine with more columns</span>
+              <span className="chip chip-muted">Attach documents</span>
+            </div>
           </div>
 
           {/* Toolbar */}
           <div className="px-6 py-3 flex items-center gap-2 border-b" style={{borderColor:'var(--line)'}}>
-            <button className="btn-ghost">➕ Add data</button>
-            <button className="btn-ghost">📊 Columns</button>
+            <button className="btn-ghost">➕ Add documents</button>
+            <button className="btn-ghost">📊 Add columns</button>
             <button className="btn-ghost">📦 Templates</button>
             <div className="ml-auto flex items-center gap-2">
               <button className="btn-ghost">Deploy to Staging</button>
-              <button className="btn-ghost">Export</button>
+              <button className="btn-ghost">Export Filing</button>
             </div>
           </div>
 
           {/* Context Chips */}
           <div className="px-6 py-3 flex items-center gap-2 border-b" style={{borderColor:'var(--line)'}}>
-            <span className="chip chip-muted">Context: Fleet</span>
-            <span className="chip chip-muted">Tenant: default</span>
-            <span className="chip chip-muted">Window: last 24h</span>
+            <span className="chip chip-muted">Context: Experiments</span>
+            <span className="chip chip-muted">Tenant: demo</span>
+            <span className="chip chip-muted">Backtest: last 90 days</span>
           </div>
 
           {/* KPI Row */}
           <div className="px-6 py-4 grid grid-cols-4 gap-3">
             {[
-              {label:'Active Vehicles', value: String(kpis.active_vehicles ?? 0)},
-              {label:'Idle Vehicles (10m)', value: String(kpis.idle_vehicles ?? 0)},
-              {label:'Alerts (24h)', value: String(kpis.alerts_24h ?? 0)},
-              {label:'Data Freshness', value: 'Live'},
+              {label:'Δ Premium', value:'+12.8%'},
+              {label:'Δ Loss Ratio', value:'-0.6 pts'},
+              {label:'Affected Fleets', value:'142'},
+              {label:'Affected Units', value:'1187'},
             ].map((k)=> (
               <div key={k.label} className="kpi">
                 <div className="text-[12px] uppercase tracking-[.08em] text-[var(--ink-dim)]">{k.label}</div>
@@ -167,7 +156,7 @@ export default async function FleetOverview() {
       <div className="fixed bottom-0 left-[72px] right-0 h-[68px] border-t bg-[var(--panel)] flex items-center px-6" style={{borderColor:'var(--line)'}}>
         <div className="w-full max-w-[1200px]">
           <div className="flex items-center gap-2 border rounded-full px-4 py-3" style={{borderColor:'var(--line)'}}>
-            <span className="chip chip-muted">Context: Fleet</span>
+            <span className="chip chip-muted">Context: Experiments</span>
             <input className="flex-1 outline-none text-[14px]" placeholder="Give me a task to work on…"/>
             <button className="text-[14px]">📎</button>
             <button className="text-[14px]">➤</button>
