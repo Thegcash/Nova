@@ -10,12 +10,21 @@ interface Vehicle {
   status: string;
 }
 
+// Generate proper UUIDs
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 const VEHICLES: Vehicle[] = [
-  { id: '1', name: 'AV-001', make: 'Tesla', model: 'Model 3', status: 'active' },
-  { id: '2', name: 'AV-002', make: 'Tesla', model: 'Model Y', status: 'active' },
-  { id: '3', name: 'AV-003', make: 'Waymo', model: 'Chrysler Pacifica', status: 'idle' },
-  { id: '4', name: 'AV-004', make: 'Cruise', model: 'Chevrolet Bolt', status: 'active' },
-  { id: '5', name: 'AV-005', make: 'Tesla', model: 'Model S', status: 'active' },
+  { id: generateUUID(), name: 'AV-001', make: 'Tesla', model: 'Model 3', status: 'active' },
+  { id: generateUUID(), name: 'AV-002', make: 'Tesla', model: 'Model Y', status: 'active' },
+  { id: generateUUID(), name: 'AV-003', make: 'Waymo', model: 'Chrysler Pacifica', status: 'idle' },
+  { id: generateUUID(), name: 'AV-004', make: 'Cruise', model: 'Chevrolet Bolt', status: 'active' },
+  { id: generateUUID(), name: 'AV-005', make: 'Tesla', model: 'Model S', status: 'active' },
 ];
 
 async function seedVehicles() {

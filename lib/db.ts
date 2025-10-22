@@ -5,8 +5,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-if (!process.env.SUPABASE_URL) {
-  throw new Error('Missing environment variable: SUPABASE_URL');
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  throw new Error('Missing environment variable: NEXT_PUBLIC_SUPABASE_URL');
 }
 
 if (!process.env.SUPABASE_SERVICE_ROLE) {
@@ -18,8 +18,8 @@ if (!process.env.SUPABASE_SERVICE_ROLE) {
  * Use only in server-side code (API routes, Server Components, Server Actions)
  */
 export const supabaseServer = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE,
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE!,
   {
     auth: {
       persistSession: false,

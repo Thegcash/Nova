@@ -9,7 +9,7 @@
     "start": "next start",
     "start:prod": "bash scripts/start-prod.sh",
     "lint": "next lint",
-    "seed:fleet": "tsx scripts/seed-fleet.ts",
+    "seed:fleet": "npx dotenv -e .env.local -- tsx scripts/seed-fleet.ts",
     "verify": "bash scripts/verify.sh"
   },
   "keywords": [],
