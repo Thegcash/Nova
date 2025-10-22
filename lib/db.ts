@@ -144,9 +144,7 @@ export const db = {
         .from('positions')
         .select('vehicle_id')
         .gte('ts', tenMinutesAgo)
-        .lt('speed', 1)
-        .group('vehicle_id')
-        .having('count(*) > 0');
+        .lt('speed', 1);
       
       if (error) throw error;
       return data?.map(row => row.vehicle_id) || [];

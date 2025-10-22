@@ -60,7 +60,8 @@ export function LiveMap({ className = "" }: LiveMapProps) {
 
     // Initialize Mapbox (preferred)
     if (mapboxToken) {
-      import('mapbox-gl').then((mapboxgl) => {
+      import('mapbox-gl' as any).then((mapboxgl) => {
+        (window as any).mapboxgl = mapboxgl;
         mapboxgl.accessToken = mapboxToken;
         
         const map = new mapboxgl.Map({
@@ -133,9 +134,9 @@ export function LiveMap({ className = "" }: LiveMapProps) {
         el.style.cursor = 'pointer';
         el.title = `${vehicles.name} - ${speed.toFixed(1)} mph`;
 
-        const marker = new mapboxgl.Marker(el)
+        const marker = new (window as any).mapboxgl.Marker(el)
           .setLngLat([lon, lat])
-          .setPopup(new mapboxgl.Popup().setHTML(`
+          .setPopup(new (window as any).mapboxgl.Popup().setHTML(`
             <div class="p-2">
               <h3 class="font-semibold">${vehicles.name}</h3>
               <p>Speed: ${speed.toFixed(1)} mph</p>

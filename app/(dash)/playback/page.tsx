@@ -52,7 +52,7 @@ export default function Playback() {
     const initMap = async () => {
       try {
         // Dynamic import with error handling
-        const mapboxgl = await import('mapbox-gl').catch(() => null);
+        const mapboxgl = await import('mapbox-gl' as any).catch(() => null);
         if (!mapboxgl) throw new Error('Mapbox not available');
         mapboxgl.accessToken = mapboxToken;
 

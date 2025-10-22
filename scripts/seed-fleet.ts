@@ -28,7 +28,7 @@ async function seedVehicles() {
       
       if (!existing) {
         // Insert vehicle
-        const { error } = await db.supabaseServer
+        const { error } = await supabaseServer
           .from('vehicles')
           .insert({
             id: vehicle.id,

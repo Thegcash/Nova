@@ -29,7 +29,7 @@ export default function LiveOps() {
 
       if (!mapRef.current) {
         const loader = new Loader({ apiKey, version: "weekly" });
-        const { Map } = await loader.importLibrary("maps");
+        const { Map } = await (loader as any).importLibrary("maps");
         mapRef.current = new Map(ref.current, {
           center: { lat: 40.73, lng: -73.97 },
           zoom: 12,

@@ -8,7 +8,7 @@ export default function NotFound() {
           Page not found
         </h2>
         <p className="text-[var(--ink-dim)] mb-6">
-          The page you're looking for doesn't exist.
+          The page you&apos;re looking for doesn&apos;t exist.
         </p>
         <Link href="/fleet-overview" className="btn-ghost">
           Go to Dashboard

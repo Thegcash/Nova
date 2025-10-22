@@ -16,7 +16,7 @@ export default function AlertsPage() {
           <div className="bg-gray-100 rounded-lg p-6 max-w-md mx-auto">
             <h3 className="font-medium mb-2">Coming Soon</h3>
             <p className="text-sm text-gray-600">
-              This feature is under development. You'll be able to view and manage fleet alerts here.
+              This feature is under development. You&apos;ll be able to view and manage fleet alerts here.
             </p>
           </div>
         </div>
