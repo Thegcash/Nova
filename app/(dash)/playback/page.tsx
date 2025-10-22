@@ -1,312 +1,416 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Chip, Button, Kbd, Kpi } from "@/components/ui";
-
-interface Vehicle {
-  id: string;
-  name: string;
-  status: string;
-}
+import { useState, useEffect, useRef } from 'react';
+import { formatRelative, formatTime, getLast24Hours } from '../../../lib/time';
 
 interface Position {
-  id: string;
   vehicle_id: string;
-  ts: string;
   lat: number;
   lon: number;
   speed: number;
   heading: number;
+  ts: string;
 }
 
-export default function PlaybackPage() {
+interface Vehicle {
+  vehicle_id: string;
+  name: string;
+  status: string;
+}
+
+interface PlaybackData {
+  positions: Position[];
+  vehicle_id: string;
+  start: string;
+  end: string;
+}
+
+export default function Playback() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [selectedVehicle, setSelectedVehicle] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
-  const [positions, setPositions] = useState<Position[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<string>('');
+  const [playbackData, setPlaybackData] = useState<PlaybackData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [scrubberPosition, setScrubberPosition] = useState(0);
+  const [timeRange, setTimeRange] = useState(getLast24Hours());
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const polylineRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
 
-  // Fetch vehicles
+  // Check for Mapbox token
   useEffect(() => {
-    const fetchVehicles = async () => {
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    setMapboxToken(token || null);
+  }, []);
+
+  // Initialize map if Mapbox is available
+  useEffect(() => {
+    if (!mapboxToken || !mapRef.current || mapInstanceRef.current) return;
+
+    const initMap = async () => {
       try {
-        const response = await fetch('/api/fleet/overview');
-        if (response.ok) {
-          const data = await response.json();
-          // Mock vehicles for now - in real app, this would come from a vehicles API
-          setVehicles([
-            { id: '1', name: 'AV-001', status: 'active' },
-            { id: '2', name: 'AV-002', status: 'active' },
-            { id: '3', name: 'AV-003', status: 'idle' },
-            { id: '4', name: 'AV-004', status: 'active' },
-            { id: '5', name: 'AV-005', status: 'active' },
-          ]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch vehicles:', error);
+        // Dynamic import with error handling
+        const mapboxgl = await import('mapbox-gl').catch(() => null);
+        if (!mapboxgl) throw new Error('Mapbox not available');
+        mapboxgl.accessToken = mapboxToken;
+
+        const map = new mapboxgl.Map({
+          container: mapRef.current!,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [-118.2437, 34.0522], // Los Angeles
+          zoom: 10
+        });
+
+        mapInstanceRef.current = map;
+
+        map.on('load', () => {
+          console.log('Playback map loaded');
+        });
+      } catch (err) {
+        console.error('Failed to load Mapbox:', err);
+        setMapboxToken(null);
       }
     };
 
-    fetchVehicles();
-  }, []);
+    initMap();
+  }, [mapboxToken]);
+
+  // Load vehicles
+  useEffect(() => {
+    const loadVehicles = async () => {
+      try {
+        const response = await fetch('/api/live/latest', {
+          cache: 'no-store',
+          next: { revalidate: 0 }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        const uniqueVehicles = result.positions?.reduce((acc: Vehicle[], pos: any) => {
+          if (!acc.find(v => v.vehicle_id === pos.vehicle_id)) {
+            acc.push({
+              vehicle_id: pos.vehicle_id,
+              name: pos.name || `Vehicle ${pos.vehicle_id}`,
+              status: pos.status || 'unknown'
+            });
+          }
+          return acc;
+        }, []) || [];
+        
+        setVehicles(uniqueVehicles);
+        if (uniqueVehicles.length > 0 && !selectedVehicle) {
+          setSelectedVehicle(uniqueVehicles[0].vehicle_id);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load vehicles');
+      }
+    };
+
+    loadVehicles();
+  }, [selectedVehicle]);
 
   // Load playback data
-  const loadPlayback = async () => {
-    if (!selectedVehicle) return;
+  const loadPlaybackData = async (vehicleId: string, start: string, end: string) => {
+    if (!vehicleId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const start = new Date(selectedDate).toISOString();
-      const end = new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000).toISOString();
+      const params = new URLSearchParams({
+        vehicle_id: vehicleId,
+        start,
+        end
+      });
 
-      const response = await fetch(
-        `/api/playback?vehicle_id=${selectedVehicle}&start=${start}&end=${end}`
-      );
-
+      const response = await fetch(`/api/playback?${params}`, {
+        cache: 'no-store',
+        next: { revalidate: 0 }
+      });
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch playback data');
+        throw new Error(`HTTP ${response.status}`);
       }
-
-      const data = await response.json();
-      setPositions(data.positions || []);
-      setCurrentIndex(0);
+      
+      const positions = await response.json();
+      setPlaybackData({
+        positions: positions || [],
+        vehicle_id: vehicleId,
+        start,
+        end
+      });
+      setScrubberPosition(0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : 'Failed to load playback data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Playback controls
-  const togglePlayback = () => {
-    if (isPlaying) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+  // Load data when vehicle or time range changes
+  useEffect(() => {
+    if (selectedVehicle) {
+      loadPlaybackData(selectedVehicle, timeRange.start, timeRange.end);
+    }
+  }, [selectedVehicle, timeRange]);
+
+  // Update map with playback data
+  useEffect(() => {
+    if (!mapInstanceRef.current || !playbackData?.positions.length || !mapboxToken) return;
+
+    const map = mapInstanceRef.current;
+    const positions = playbackData.positions;
+
+    // Remove existing polyline and marker
+    if (polylineRef.current) {
+      map.removeLayer('playback-route');
+      map.removeSource('playback-route');
+    }
+    if (markerRef.current) {
+      markerRef.current.remove();
+    }
+
+    if (positions.length === 0) return;
+
+    // Create polyline
+    const coordinates = positions.map(p => [p.lon, p.lat]);
+    
+    map.addSource('playback-route', {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates
+        }
       }
-      setIsPlaying(false);
-    } else {
-      if (positions.length > 0) {
-        intervalRef.current = setInterval(() => {
-          setCurrentIndex(prev => {
-            if (prev >= positions.length - 1) {
-              setIsPlaying(false);
-              return prev;
-            }
-            return prev + 1;
-          });
-        }, 1000 / playbackSpeed);
-        setIsPlaying(true);
+    });
+
+    map.addLayer({
+      id: 'playback-route',
+      type: 'line',
+      source: 'playback-route',
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round'
+      },
+      paint: {
+        'line-color': '#2b6be4',
+        'line-width': 3
+      }
+    });
+
+    // Add current position marker
+    const currentIndex = Math.floor((scrubberPosition / 100) * (positions.length - 1));
+    const currentPos = positions[currentIndex];
+    
+    if (currentPos) {
+      const el = document.createElement('div');
+      el.className = 'marker';
+      el.style.cssText = `
+        background-color: #ef4444;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 3px solid white;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      `;
+
+      markerRef.current = new (window as any).mapboxgl.Marker(el)
+        .setLngLat([currentPos.lon, currentPos.lat])
+        .setPopup(
+          new (window as any).mapboxgl.Popup({ offset: 25 })
+            .setHTML(`
+              <div class="p-2">
+                <div class="font-semibold">${vehicles.find(v => v.vehicle_id === currentPos.vehicle_id)?.name || currentPos.vehicle_id}</div>
+                <div class="text-sm">Speed: ${Math.round(currentPos.speed)} mph</div>
+                <div class="text-sm">Heading: ${Math.round(currentPos.heading)}°</div>
+                <div class="text-sm">${formatTime(currentPos.ts)}</div>
+                <div class="text-xs text-gray-500">Position ${currentIndex + 1} of ${positions.length}</div>
+              </div>
+            `)
+        )
+        .addTo(map);
+
+      // Fit map to route bounds
+      if (coordinates.length > 1) {
+        const bounds = coordinates.reduce((bounds, coord) => {
+          return bounds.extend(coord);
+        }, new (window as any).mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+
+        map.fitBounds(bounds, { padding: 50 });
       }
     }
+
+    polylineRef.current = true;
+  }, [playbackData, scrubberPosition, mapboxToken, vehicles]);
+
+  const handleVehicleChange = (vehicleId: string) => {
+    setSelectedVehicle(vehicleId);
   };
 
-  const seekTo = (index: number) => {
-    setCurrentIndex(Math.max(0, Math.min(index, positions.length - 1)));
+  const handleTimeRangeChange = (field: 'start' | 'end', value: string) => {
+    setTimeRange(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  // Cleanup interval on unmount
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
+  const handleScrubberChange = (value: number) => {
+    setScrubberPosition(value);
+  };
 
-  // Calculate stats
-  const currentPosition = positions[currentIndex];
-  const tripDuration = positions.length > 0 
-    ? Math.round((new Date(positions[positions.length - 1].ts).getTime() - new Date(positions[0].ts).getTime()) / (1000 * 60))
-    : 0;
-  
-  const totalDistance = positions.length > 1
-    ? positions.reduce((total, pos, index) => {
-        if (index === 0) return 0;
-        const prev = positions[index - 1];
-        // Simple distance calculation (not accurate for long distances)
-        const latDiff = pos.lat - prev.lat;
-        const lonDiff = pos.lon - prev.lon;
-        const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 69; // Rough miles
-        return total + distance;
-      }, 0)
-    : 0;
-
-  const avgSpeed = positions.length > 0
-    ? positions.reduce((sum, pos) => sum + pos.speed, 0) / positions.length
-    : 0;
+  const currentPosition = playbackData?.positions ? 
+    playbackData.positions[Math.floor((scrubberPosition / 100) * (playbackData.positions.length - 1))] : 
+    null;
 
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold mb-2">Playback</h1>
-        <p className="text-gray-600">Review historical vehicle data and replay past operations.</p>
+        <p className="text-[var(--ink-dim)] text-sm">
+          Review vehicle movement history with time scrubbing
+        </p>
       </div>
-      
-      <div className="bg-white border rounded-lg p-6 mb-6">
-        <div className="flex items-center gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="border rounded-md px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
-            <select 
-              value={selectedVehicle}
-              onChange={(e) => setSelectedVehicle(e.target.value)}
-              className="border rounded-md px-3 py-2 text-sm"
-            >
-              <option value="">Select Vehicle</option>
-              {vehicles.map(vehicle => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-end">
-            <Button 
-              variant="primary" 
-              onClick={loadPlayback}
-              disabled={!selectedVehicle || loading}
-            >
-              {loading ? 'Loading...' : 'Load Playback'}
-            </Button>
-          </div>
+
+      {/* Controls */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Vehicle Selection */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Vehicle</label>
+          <select
+            value={selectedVehicle}
+            onChange={(e) => handleVehicleChange(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg bg-white"
+            style={{ borderColor: 'var(--line)' }}
+          >
+            <option value="">Select a vehicle</option>
+            {vehicles.map(vehicle => (
+              <option key={vehicle.vehicle_id} value={vehicle.vehicle_id}>
+                {vehicle.name} ({vehicle.vehicle_id})
+              </option>
+            ))}
+          </select>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-        
-        <div className="bg-gray-100 border rounded-lg h-64 flex items-center justify-center relative">
-          {positions.length > 0 ? (
-            <div className="w-full h-full p-4">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-medium">
-                  {vehicles.find(v => v.id === selectedVehicle)?.name} - Playback
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Position {currentIndex + 1} of {positions.length}
-                </p>
-              </div>
-              
-              {currentPosition && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {currentPosition.speed.toFixed(1)}
-                    </div>
-                    <div className="text-xs text-gray-500">Speed (mph)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {currentPosition.lat.toFixed(4)}
-                    </div>
-                    <div className="text-xs text-gray-500">Latitude</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {currentPosition.lon.toFixed(4)}
-                    </div>
-                    <div className="text-xs text-gray-500">Longitude</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {currentPosition.heading.toFixed(0)}°
-                    </div>
-                    <div className="text-xs text-gray-500">Heading</div>
-                  </div>
-                </div>
-              )}
+        {/* Time Range */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Start Time</label>
+          <input
+            type="datetime-local"
+            value={timeRange.start.slice(0, 16)}
+            onChange={(e) => handleTimeRangeChange('start', new Date(e.target.value).toISOString())}
+            className="w-full px-3 py-2 border rounded-lg bg-white"
+            style={{ borderColor: 'var(--line)' }}
+          />
+        </div>
 
-              {/* Playback Controls */}
-              <div className="flex items-center justify-center gap-4">
-                <Button onClick={togglePlayback} variant="primary">
-                  {isPlaying ? 'Pause' : 'Play'}
-                </Button>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm">Speed:</label>
-                  <select 
-                    value={playbackSpeed}
-                    onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-                    className="border rounded px-2 py-1 text-sm"
-                  >
-                    <option value={0.5}>0.5x</option>
-                    <option value={1}>1x</option>
-                    <option value={2}>2x</option>
-                    <option value={4}>4x</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mt-4">
-                <input
-                  type="range"
-                  min="0"
-                  max={positions.length - 1}
-                  value={currentIndex}
-                  onChange={(e) => seekTo(Number(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>{new Date(positions[0]?.ts).toLocaleTimeString()}</span>
-                  <span>{new Date(positions[positions.length - 1]?.ts).toLocaleTimeString()}</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center text-gray-500">
-              <div className="text-lg font-medium mb-2">Playback Viewer</div>
-              <div className="text-sm">Select a vehicle and date to view historical data</div>
-              <div className="mt-4 flex items-center gap-2 justify-center">
-                <Kbd>Space</Kbd>
-                <span className="text-xs">Play/Pause</span>
-                <Kbd>←</Kbd>
-                <Kbd>→</Kbd>
-                <span className="text-xs">Seek</span>
-              </div>
-            </div>
-          )}
+        <div>
+          <label className="block text-sm font-medium mb-2">End Time</label>
+          <input
+            type="datetime-local"
+            value={timeRange.end.slice(0, 16)}
+            onChange={(e) => handleTimeRangeChange('end', new Date(e.target.value).toISOString())}
+            className="w-full px-3 py-2 border rounded-lg bg-white"
+            style={{ borderColor: 'var(--line)' }}
+          />
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Kpi 
-          label="Trip Duration" 
-          value={`${Math.floor(tripDuration / 60)}h ${tripDuration % 60}m`} 
-          sub="Selected timeframe" 
-        />
-        <Kpi 
-          label="Distance Covered" 
-          value={`${totalDistance.toFixed(1)} mi`} 
-          sub="Total route distance" 
-        />
-        <Kpi 
-          label="Avg Speed" 
-          value={`${avgSpeed.toFixed(1)} mph`} 
-          sub="Including stops" 
-        />
-      </div>
+
+      {/* Scrubber */}
+      {playbackData?.positions.length ? (
+        <div className="mb-6">
+          <div className="flex items-center gap-4 mb-2">
+            <span className="text-sm font-medium">Timeline</span>
+            <span className="text-sm text-[var(--ink-dim)]">
+              {currentPosition ? formatTime(currentPosition.ts) : 'No data'}
+            </span>
+            <span className="text-sm text-[var(--ink-dim)]">
+              {playbackData.positions.length} positions
+            </span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={scrubberPosition}
+            onChange={(e) => handleScrubberChange(Number(e.target.value))}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            style={{ background: `linear-gradient(to right, #2b6be4 0%, #2b6be4 ${scrubberPosition}%, #e5e7eb ${scrubberPosition}%, #e5e7eb 100%)` }}
+          />
+        </div>
+      ) : null}
+
+      {/* Map or List */}
+      {mapboxToken ? (
+        <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--line)' }}>
+          <div ref={mapRef} className="w-full h-96" />
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--line)' }}>
+          <div className="bg-[var(--panel)] px-4 py-2 border-b" style={{ borderColor: 'var(--line)' }}>
+            <div className="text-sm font-medium">Playback Route</div>
+            <div className="text-xs text-[var(--ink-dim)]">
+              {mapboxToken ? 'Map view' : 'List view (Mapbox token not configured)'}
+            </div>
+          </div>
+          <div className="max-h-96 overflow-auto">
+            {loading ? (
+              <div className="p-8 text-center text-[var(--ink-dim)]">
+                Loading playback data...
+              </div>
+            ) : error ? (
+              <div className="p-4 bg-red-50 border border-red-200 rounded m-4">
+                <div className="text-red-800 font-medium">Error</div>
+                <div className="text-red-600 text-sm">{error}</div>
+              </div>
+            ) : playbackData?.positions.length ? (
+              <div className="divide-y" style={{ borderColor: 'var(--line)' }}>
+                {playbackData.positions.map((pos, index) => {
+                  const isCurrent = index === Math.floor((scrubberPosition / 100) * (playbackData.positions.length - 1));
+                  return (
+                    <div 
+                      key={`${pos.vehicle_id}-${index}`} 
+                      className={`p-4 ${isCurrent ? 'bg-[var(--accent)] text-white' : 'hover:bg-[var(--hover)]'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className={`font-medium ${isCurrent ? 'text-white' : ''}`}>
+                            Position {index + 1} {isCurrent && '← Current'}
+                          </div>
+                          <div className={`text-sm ${isCurrent ? 'text-blue-100' : 'text-[var(--ink-dim)]'}`}>
+                            {formatTime(pos.ts)}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-sm ${isCurrent ? 'text-white' : ''}`}>
+                            {pos.lat.toFixed(6)}, {pos.lon.toFixed(6)}
+                          </div>
+                          <div className={`text-xs ${isCurrent ? 'text-blue-100' : 'text-[var(--ink-dim)]'}`}>
+                            {Math.round(pos.speed)} mph • {Math.round(pos.heading)}°
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-[var(--ink-dim)]">
+                No playback data available
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
