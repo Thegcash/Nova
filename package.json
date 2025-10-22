@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:fleet": "tsx scripts/seed-fleet.ts"
+    "seed:fleet": "tsx scripts/seed-fleet.ts",
+    "verify": "bash scripts/verify.sh"
   },
   "keywords": [],
   "author": "",
