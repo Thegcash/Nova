@@ -270,21 +270,63 @@ export default function Playback() {
   const currentPosition = playbackData?.positions ? 
     playbackData.positions[Math.floor((scrubberPosition / 100) * (playbackData.positions.length - 1))] : 
     null;
-
+  
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold mb-2">Playback</h1>
-        <p className="text-[var(--ink-dim)] text-sm">
-          Review vehicle movement history with time scrubbing
-        </p>
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
+      <style jsx global>{`
+        :root{
+          --bg:#fff; --panel:#fff;
+          --ink:#0f1720; --ink-dim:#5b6472;
+          --line:#e8eaf0; --hover:#f7f8fb; --focus:#cfd6e4; --accent:#2b6be4;
+          --chip-bg:#f4f6fa; --chip-ink:#3e4652;
+          --radius-s:8px; --radius-m:12px; --radius-l:16px;
+          --shadow-0:0 0 0 1px var(--line);
+        }
+        .btn-ghost{ height:34px; padding:0 12px; border:1px solid var(--line); border-radius:12px; background:var(--bg); display:inline-flex; align-items:center; gap:8px; }
+        .btn-ghost:hover{ background:var(--hover); }
+        .chip{ padding:4px 10px; border-radius:999px; font-size:12px; line-height:1; }
+        .chip-muted{ background:var(--chip-bg); color:var(--chip-ink); }
+      `}</style>
+
+      {/* Top Bar */}
+      <div className="h-14 flex items-center justify-between px-6 border-b" style={{borderColor:'var(--line)'}}>
+        <div className="flex items-center gap-3">
+          <div className="text-[13px] text-[var(--ink-dim)]">Fleet ▾</div>
+          <div className="w-1 h-1 rounded-full bg-[var(--line)]"/>
+          <div className="text-[15px] font-semibold">Command Center — Playback</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="btn-ghost text-[13px]">Share</button>
+          <button className="btn-ghost text-[13px]">Download</button>
+          <button className="btn-ghost text-[13px]">EN ▾</button>
+        </div>
       </div>
+      
+      <div className="flex">
+        {/* Left Rail */}
+        <div className="w-[72px] border-r" style={{borderColor:'var(--line)'}}>
+          <div className="p-3 flex flex-col items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[var(--hover)] grid place-items-center font-semibold">N</div>
+            {['🏠','📁','💬','📄','⚙️'].map((i,idx)=> (
+              <button key={idx} className="w-10 h-10 rounded-xl hover:bg-[var(--hover)] grid place-items-center text-lg">{i}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Column */}
+        <div className="flex-1 min-h-[calc(100vh-56px)] p-6">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold mb-2">Playback</h1>
+            <p className="text-[var(--ink-dim)] text-sm">
+              Review vehicle movement history with time scrubbing
+            </p>
+          </div>
 
       {/* Controls */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Vehicle Selection */}
-        <div>
+          <div>
           <label className="block text-sm font-medium mb-2">Vehicle</label>
           <select
             value={selectedVehicle}
@@ -298,8 +340,8 @@ export default function Playback() {
                 {vehicle.name} ({vehicle.vehicle_id})
               </option>
             ))}
-          </select>
-        </div>
+            </select>
+          </div>
 
         {/* Time Range */}
         <div>
@@ -396,10 +438,10 @@ export default function Playback() {
                           </div>
                           <div className={`text-xs ${isCurrent ? 'text-blue-100' : 'text-[var(--ink-dim)]'}`}>
                             {Math.round(pos.speed)} mph • {Math.round(pos.heading)}°
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+            </div>
+          </div>
+        </div>
+      </div>
                   );
                 })}
               </div>
@@ -411,6 +453,8 @@ export default function Playback() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
