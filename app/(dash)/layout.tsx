@@ -1,6 +1,8 @@
 // app/(dash)/layout.tsx
 "use client";
 
+import NavLink from "../../components/NavLink";
+
 export default function DashLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
@@ -43,11 +45,11 @@ export default function DashLayout({ children }: { children: React.ReactNode }) 
           <div className="p-4">
             <div className="text-sm font-semibold mb-3">Nova</div>
             <nav className="grid gap-1 text-[14px]">
-              <a className="btn-ghost" href="/fleet-overview">Dashboard</a>
-              <a className="btn-ghost" href="/map-live-ops">Live Ops</a>
-              <a className="btn-ghost" href="/playback">Playback</a>
-              <a className="btn-ghost" href="/alerts">Alerts</a>
-              <a className="btn-ghost" href="/exports">Exports</a>
+              <NavLink href="/fleet-overview">Dashboard</NavLink>
+              <NavLink href="/map-live-ops">Live Ops</NavLink>
+              <NavLink href="/playback">Playback</NavLink>
+              <NavLink href="/alerts">Alerts</NavLink>
+              <NavLink href="/exports">Exports</NavLink>
             </nav>
           </div>
         </aside>
