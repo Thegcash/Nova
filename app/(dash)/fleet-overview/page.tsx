@@ -1,4 +1,6 @@
 // app/(dash)/fleet-overview/page.tsx
+"use client";
+
 export default function ExperimentsPreview() {
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
@@ -49,7 +51,7 @@ export default function ExperimentsPreview() {
           <button className="btn-ghost text-[13px]">⚡ Run all</button>
         </div>
       </div>
-
+      
       {/* Layout: Left Rail + Main */}
       <div className="flex">
         {/* Left Rail */}
