@@ -1,4 +1,6 @@
 // app/(dash)/fleet-overview/page.tsx
+import AssistantPanel from "@/components/AssistantPanel";
+
 export const dynamic = "force-dynamic";
 
 async function getKpis() {
@@ -16,15 +18,7 @@ export default async function FleetOverview() {
 
   return (
     <>
-      {/* Assistant Dock */}
-      <div className="px-6 py-4 border-b" style={{borderColor:'var(--line)'}}>
-        <div className="flex items-center gap-2">
-          <button className="btn-ghost">💬 New chat</button>
-          <span className="chip chip-muted">Analyze fleet</span>
-          <span className="chip chip-muted">Find idle units</span>
-          <span className="chip chip-muted">Attach logs</span>
-        </div>
-      </div>
+      <AssistantPanel />
 
       {/* Context */}
       <div className="px-6 py-3 flex items-center gap-2 border-b" style={{borderColor:'var(--line)'}}>
