@@ -1,0 +1,15 @@
+# never ignore source
+!.*
+!.vercelignore
+!.env.example
+
+# ignore only local/dev artifacts
+node_modules
+.next
+out
+coverage
+dist
+.DS_Store
+.env
+.env.*
+.vercel
