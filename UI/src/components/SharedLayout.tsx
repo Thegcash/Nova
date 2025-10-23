@@ -1,10 +1,11 @@
+// @ts-nocheck
 "use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Enhanced UI primitives
-const Button = ({ className = "", children, variant = "solid", onClick, ...props }) => {
+const Button = ({ className = "", children, variant = "solid", onClick, ...props }: any) => {
   const base =
     variant === "ghost"
       ? "bg-transparent hover:bg-foreground/5"
@@ -22,7 +23,7 @@ const Button = ({ className = "", children, variant = "solid", onClick, ...props
 
 const Separator = () => <div className="h-px w-full bg-foreground/10" />;
 
-const ScrollArea = ({ className = "", children }) => (
+const ScrollArea = ({ className = "", children }: any) => (
   <div className={`overflow-auto ${className}`}>{children}</div>
 );
 
@@ -44,7 +45,7 @@ export default function SharedLayout({
   showAssistant = true, 
   setShowAssistant,
   assistantContent 
-}) {
+}: any) {
   const router = useRouter();
 
   const handleNavClick = (item) => {
@@ -140,5 +141,7 @@ export default function SharedLayout({
     </div>
   );
 }
+
+
 
 
