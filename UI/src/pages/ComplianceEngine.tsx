@@ -1,8 +1,9 @@
 // @ts-nocheck
 "use client";
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { maybeLive } from '@/lib/api';
 import {
   ResponsiveContainer,
   BarChart as RBarChart,
@@ -150,6 +151,24 @@ export default function ComplianceEngine() {
   const [showGapsOnly, setShowGapsOnly] = useState(false);
   const [showAssistant, setShowAssistant] = useState(true);
 
+  // Live data toggle and state - default to LIVE mode
+  const live = useMemo(() => {
+    if (typeof window === 'undefined') return true;
+    const urlParam = new URLSearchParams(window.location.search).get('live');
+    return urlParam !== '0'; // Default to live unless explicitly set to '0'
+  }, []);
+
+  const [liveData, setLiveData] = useState({ policies: [], tasks: [] });
+
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      const data = await maybeLive('/api/compliance', { policies: [], tasks: [] }, live);
+      if (!ignore) setLiveData(data);
+    })();
+    return () => { ignore = true; };
+  }, [live]);
+
   // Jurisdiction status chart (stacked) — counts by region
   const jurisdictionData = useMemo(
     () => [
@@ -244,6 +263,13 @@ export default function ComplianceEngine() {
               <option>APAC</option>
               <option>LATAM</option>
             </Select>
+          </div>
+        </div>
+
+        {/* Live Mode Indicator */}
+        <div className="px-6 py-2">
+          <div className="text-sm opacity-60">
+            Mode: {live ? 'LIVE (Supabase)' : 'MOCK'} {live && `| Policies: ${liveData.policies.length} | Tasks: ${liveData.tasks.length}`}
           </div>
         </div>
 

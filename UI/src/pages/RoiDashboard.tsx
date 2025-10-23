@@ -1,8 +1,9 @@
 // @ts-nocheck
 "use client";
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { maybeLive } from '@/lib/api';
 import {
   ResponsiveContainer,
   LineChart as RLineChart,
@@ -111,6 +112,24 @@ export default function NovaROIDashboard() {
   const [monthlyGuardrailCost, setMonthlyGuardrailCost] = useState(45000);
   const [showTests, setShowTests] = useState(true); // dev tests
   const [showAssistant, setShowAssistant] = useState(true);
+
+  // Live data toggle and state - default to LIVE mode
+  const live = useMemo(() => {
+    if (typeof window === 'undefined') return true;
+    const urlParam = new URLSearchParams(window.location.search).get('live');
+    return urlParam !== '0'; // Default to live unless explicitly set to '0'
+  }, []);
+
+  const [liveData, setLiveData] = useState({ hasExposures: false, hasLosses: false, roi_kpis: {} });
+
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      const data = await maybeLive('/api/roi', { hasExposures: false, hasLosses: false, roi_kpis: {} }, live);
+      if (!ignore) setLiveData(data);
+    })();
+    return () => { ignore = true; };
+  }, [live]);
 
   // Derived
   const scenMul = scenario === "baseline" ? 0.9 : scenario === "aggressive" ? 1.1 : 1.0;
@@ -269,6 +288,13 @@ export default function NovaROIDashboard() {
                 <Button key={s} variant={scenario === s ? 'secondary' : 'outline'} onClick={() => setScenario(s)} className="px-2 capitalize">{s}</Button>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Live Mode Indicator */}
+        <div className="px-6 py-2">
+          <div className="text-sm opacity-60">
+            Mode: {live ? 'LIVE (Supabase)' : 'MOCK'} {live && `| Exposures: ${liveData.hasExposures ? 'Yes' : 'No'} | Losses: ${liveData.hasLosses ? 'Yes' : 'No'}`}
           </div>
         </div>
 

@@ -1,8 +1,5 @@
 // @ts-nocheck
-export const runtime = 'nodejs';
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
-
+export const runtime = 'nodejs'; export const revalidate = 0; export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
@@ -25,7 +22,6 @@ export async function POST(req) {
     const text = completion.choices?.[0]?.message?.content || '';
     return NextResponse.json({ text });
   } catch (e) {
-    console.error('Assistant error:', e);
     return NextResponse.json({ error: 'Assistant failed', detail: String(e) }, { status: 500 });
   }
 }

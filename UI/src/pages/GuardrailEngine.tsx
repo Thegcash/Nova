@@ -1,8 +1,9 @@
 // @ts-nocheck
 "use client";
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { maybeLive } from '@/lib/api';
 import {
   ResponsiveContainer,
   LineChart as RLineChart,
@@ -123,6 +124,24 @@ export default function GuardrailEngine() {
   const router = useRouter();
   const [active, setActive] = useState("Guardrail Engine");
   const [showAssistant, setShowAssistant] = useState(true);
+
+  // Live data toggle and state - default to LIVE mode
+  const live = useMemo(() => {
+    if (typeof window === 'undefined') return true;
+    const urlParam = new URLSearchParams(window.location.search).get('live');
+    return urlParam !== '0'; // Default to live unless explicitly set to '0'
+  }, []);
+
+  const [liveData, setLiveData] = useState({ guardrails: [], hits: [] });
+
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      const data = await maybeLive('/api/guardrails', { guardrails: [], hits: [] }, live);
+      if (!ignore) setLiveData(data);
+    })();
+    return () => { ignore = true; };
+  }, [live]);
   const [name, setName] = useState("Reduce near-miss events without hurting throughput");
   const [signal, setSignal] = useState("near_miss_rate");
   const [condition, setCondition] = useState("> 2 / 24h");
@@ -229,6 +248,13 @@ export default function GuardrailEngine() {
           <div className="ml-auto flex items-center gap-2">
             <Badge variant="secondary">Draft</Badge>
             <Badge variant="outline">Last saved 2m ago</Badge>
+          </div>
+        </div>
+
+        {/* Live Mode Indicator */}
+        <div className="px-6 py-2">
+          <div className="text-sm opacity-60">
+            Mode: {live ? 'LIVE (Supabase)' : 'MOCK'} {live && `| Guardrails: ${liveData.guardrails.length} | Hits: ${liveData.hits.length}`}
           </div>
         </div>
 

@@ -1,8 +1,10 @@
 // @ts-nocheck
 "use client";
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { maybeLive } from '@/lib/api';
+import MapView from '@/components/MapView';
 import {
   ResponsiveContainer,
   LineChart as RLineChart,
@@ -138,6 +140,30 @@ export default function RiskDashboard() {
   const [active, setActive] = useState("Risk Scoring");
   const [activityRange, setActivityRange] = useState("24h");
   const [showAssistant, setShowAssistant] = useState(true);
+
+  // Live data toggle and state - default to LIVE mode
+  const live = useMemo(() => {
+    if (typeof window === 'undefined') return true;
+    const urlParam = new URLSearchParams(window.location.search).get('live');
+    return urlParam !== '0'; // Default to live unless explicitly set to '0'
+  }, []);
+
+  const [liveData, setLiveData] = useState({
+    totals: { exposures: 0, losses: 0, exposures_last_30d: 0 },
+    series: []
+  });
+
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      const data = await maybeLive('/api/risk-metrics', {
+        totals: { exposures: 0, losses: 0, exposures_last_30d: 0 },
+        series: []
+      }, live);
+      if (!ignore) setLiveData(data);
+    })();
+    return () => { ignore = true; };
+  }, [live]);
 
   // Mocked range filter so tabs feel functional
   const recentActivity = useMemo(() => {
@@ -281,6 +307,13 @@ export default function RiskDashboard() {
             <Avatar>
               <AvatarFallback>GG</AvatarFallback>
             </Avatar>
+          </div>
+        </div>
+
+        {/* Live Mode Indicator */}
+        <div className="px-6 py-2">
+          <div className="text-sm opacity-60">
+            Mode: {live ? 'LIVE (Supabase)' : 'MOCK'} {live && `| Exposures: ${liveData.totals.exposures} | Losses: ${liveData.totals.losses}`}
           </div>
         </div>
 
@@ -436,6 +469,17 @@ export default function RiskDashboard() {
                     </RLineChart>
                   </ResponsiveContainer>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Fleet Map */}
+            <Card className="col-span-12 min-w-0">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="font-semibold">Fleet Locations</div>
+                  <Badge variant="secondary" className="text-[10px]">Live GPS</Badge>
+                </div>
+                <MapView />
               </CardContent>
             </Card>
 
